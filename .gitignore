@@ -1,0 +1,36 @@
+# macOS System & Finder
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon\r\r
+._*
+.Spotlight-V100
+.Trashes
+
+# Xcode & Swift Package Manager
+.build/
+Packages/
+Package.pins
+Package.resolved
+xcuserdata/
+*.xcuserdatad/
+*.xcscmblueprint
+*.xccheckout
+*.xcworkspace
+*.moved-aside
+DerivedData/
+
+# App Bundles & Release Archives
+VocabFloat.app
+VocabFloat.zip
+*.dmg
+*.pkg
+
+# Logs, Backups & Temp
+*.log
+*.tmp
+*.bak
+*.swp
+*~
+.idea/
+.vscode/

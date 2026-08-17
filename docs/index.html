@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VocabFloat — Minimalist macOS Reading Companion</title>
+    <meta name="description" content="A lightweight, distraction-free macOS companion for active English reading, vocabulary acquisition, and generative note extraction across PDFs.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📖</text></svg>">
+    <style>
+        :root {
+            --text-primary: #1D1D1F;
+            --text-secondary: #86868B;
+            --text-tertiary: #A1A1A6;
+            --accent: #0071E3;
+            --accent-glow: rgba(0, 113, 227, 0.08);
+            --line: rgba(0, 0, 0, 0.06);
+            --max-w: 1040px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            background: radial-gradient(circle at 50% -10%, rgba(240, 244, 255, 0.7) 0%, rgba(255, 255, 255, 0.95) 45%, #FFFFFF 100%);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+            line-height: 1.5;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* Nav */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 52px;
+            backdrop-filter: saturate(180%) blur(24px);
+            -webkit-backdrop-filter: saturate(180%) blur(24px);
+            background: rgba(255, 255, 255, 0.75);
+            border-bottom: 1px solid var(--line);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+        }
+
+        .nav-logo {
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 13.5px;
+            transition: color 0.2s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-primary);
+        }
+
+        .nav-cta {
+            background: var(--text-primary);
+            color: #FFFFFF !important;
+            padding: 5px 14px;
+            border-radius: 980px;
+            font-size: 12.5px !important;
+            font-weight: 500;
+            transition: opacity 0.2s ease !important;
+        }
+
+        .nav-cta:hover {
+            opacity: 0.85;
+        }
+
+        /* Container */
+        .container {
+            max-width: var(--max-w);
+            margin: 0 auto;
+            padding: 0 32px;
+        }
+
+        /* Hero */
+        .hero {
+            padding: 150px 0 80px;
+            text-align: center;
+        }
+
+        .badge {
+            display: inline-block;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--accent);
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+
+        .hero h1 {
+            font-size: clamp(48px, 7.5vw, 80px);
+            font-weight: 700;
+            letter-spacing: -2.8px;
+            line-height: 1.04;
+            margin-bottom: 24px;
+            background: linear-gradient(180deg, #1D1D1F 0%, #434344 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: clamp(19px, 2.4vw, 24px);
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto 36px;
+            font-weight: 400;
+            letter-spacing: -0.4px;
+            line-height: 1.45;
+        }
+
+        .hero-actions {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            background: var(--text-primary);
+            color: #FFFFFF;
+            padding: 12px 30px;
+            border-radius: 980px;
+            font-size: 15px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.88;
+        }
+
+        .btn-secondary {
+            background: rgba(0, 0, 0, 0.04);
+            color: var(--text-primary);
+            padding: 12px 26px;
+            border-radius: 980px;
+            font-size: 15px;
+            font-weight: 500;
+            text-decoration: none;
+            backdrop-filter: blur(10px);
+            transition: background 0.2s ease;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 0, 0, 0.08);
+        }
+
+        .meta-req {
+            font-size: 12.5px;
+            color: var(--text-tertiary);
+            margin-top: 16px;
+        }
+
+        /* Terminal Box (Glassmorphic) */
+        .terminal-box {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--line);
+            border-radius: 980px;
+            padding: 8px 18px 8px 24px;
+            max-width: 500px;
+            margin: 44px auto 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+            font-size: 13px;
+            color: var(--text-secondary);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+        }
+
+        .terminal-box code {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .copy-btn {
+            background: rgba(0, 0, 0, 0.05);
+            border: none;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 11.5px;
+            font-weight: 500;
+            padding: 4px 10px;
+            border-radius: 980px;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        /* Metrics */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+            margin: 70px 0 100px;
+            padding: 44px 0;
+            border-top: 1px solid var(--line);
+            border-bottom: 1px solid var(--line);
+            text-align: center;
+        }
+
+        .metric-val {
+            font-size: 46px;
+            font-weight: 700;
+            letter-spacing: -2px;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .metric-label {
+            font-size: 13.5px;
+            color: var(--text-secondary);
+        }
+
+        /* Section Headings */
+        .section-header {
+            margin-bottom: 36px;
+        }
+
+        .section-header h2 {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -1px;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .section-header p {
+            color: var(--text-secondary);
+            font-size: 16px;
+        }
+
+        /* 5-Step Single Horizon Line */
+        .cycle-section {
+            margin-bottom: 110px;
+        }
+
+        .cycle-steps {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 24px;
+            padding-top: 20px;
+            border-top: 1px solid var(--text-primary);
+        }
+
+        .cycle-step {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .step-num {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 8px;
+        }
+
+        .cycle-step h3 {
+            font-size: 15.5px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            letter-spacing: -0.2px;
+            color: var(--text-primary);
+        }
+
+        .cycle-step p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Shortcuts */
+        .shortcuts-section {
+            margin-bottom: 110px;
+            padding-top: 24px;
+            border-top: 1px solid var(--line);
+        }
+
+        .shortcuts-section h3 {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 16px;
+        }
+
+        .table-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 0;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .table-desc {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .key-badge {
+            display: inline-block;
+            background: rgba(0, 0, 0, 0.04);
+            color: var(--text-primary);
+            padding: 2px 7px;
+            border-radius: 5px;
+            font-family: ui-monospace, monospace;
+            font-size: 12.5px;
+            font-weight: 600;
+            margin-right: 3px;
+        }
+
+        /* Features */
+        .features-section {
+            margin-bottom: 110px;
+            padding-top: 24px;
+            border-top: 1px solid var(--line);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px 32px;
+            margin-top: 36px;
+        }
+
+        .feature-item h3 {
+            font-size: 16.5px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            letter-spacing: -0.2px;
+            color: var(--text-primary);
+        }
+
+        .feature-item p {
+            color: var(--text-secondary);
+            font-size: 13.5px;
+            line-height: 1.55;
+        }
+
+        /* FAQ */
+        .faq-section {
+            margin-bottom: 110px;
+            padding-top: 24px;
+            border-top: 1px solid var(--line);
+        }
+
+        .faq-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 36px;
+            margin-top: 36px;
+        }
+
+        .faq-item h4 {
+            font-size: 15.5px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            letter-spacing: -0.2px;
+            color: var(--text-primary);
+        }
+
+        .faq-item p {
+            color: var(--text-secondary);
+            font-size: 13.5px;
+            line-height: 1.55;
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--line);
+            padding: 36px 0;
+            text-align: center;
+            color: var(--text-tertiary);
+            font-size: 12.5px;
+        }
+
+        footer a {
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+
+        @media (max-width: 900px) {
+            .cycle-steps {
+                grid-template-columns: 1fr;
+            }
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+            .faq-grid {
+                grid-template-columns: 1fr;
+            }
+            .metrics-grid {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+            header {
+                padding: 0 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Nav -->
+    <header>
+        <a href="#" class="nav-logo">VocabFloat</a>
+        <div class="nav-links">
+            <a href="#cycle">Cycle</a>
+            <a href="#shortcuts">Shortcuts</a>
+            <a href="#features">Features</a>
+            <a href="#faq">FAQ</a>
+            <a href="https://github.com/TheColaBro/Vocabfloat" target="_blank">GitHub</a>
+            <a href="https://github.com/TheColaBro/Vocabfloat/releases/tag/v1.0.0" class="nav-cta">Download</a>
+        </div>
+    </header>
+
+    <!-- Main -->
+    <main class="container">
+        <!-- Hero -->
+        <section class="hero">
+            <div class="badge">Native macOS · Open Source</div>
+            <h1>Active Reading.<br>Vocabulary Growth.</h1>
+            <p>A quiet, distraction-free macOS companion for English PDF reading. Turning passive browsing into active vocabulary acquisition and note reflection.</p>
+            
+            <div class="hero-actions">
+                <a href="https://github.com/TheColaBro/Vocabfloat/releases/tag/v1.0.0" class="btn-primary">Download for macOS</a>
+                <a href="https://github.com/TheColaBro/Vocabfloat" target="_blank" class="btn-secondary">GitHub</a>
+            </div>
+            <div class="meta-req">macOS 14+ · Apple Silicon & Intel</div>
+
+            <div class="terminal-box">
+                <div><code>brew install --cask TheColaBro/tap/vocabfloat</code></div>
+                <button class="copy-btn" onclick="navigator.clipboard.writeText('brew tap TheColaBro/tap && brew install --cask vocabfloat'); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy', 2000)">Copy</button>
+            </div>
+        </section>
+
+        <!-- Metrics -->
+        <section class="metrics-grid">
+            <div>
+                <div class="metric-val">&lt; 100ms</div>
+                <div class="metric-label">Hotkey Response</div>
+            </div>
+            <div>
+                <div class="metric-val">~40 MB</div>
+                <div class="metric-label">RAM Footprint</div>
+            </div>
+            <div>
+                <div class="metric-val">100% Local</div>
+                <div class="metric-label">Zero Telemetry</div>
+            </div>
+        </section>
+
+        <!-- Active Reading Cycle -->
+        <section id="cycle" class="cycle-section">
+            <div class="section-header">
+                <h2>The Active Reading Cycle</h2>
+                <p>Five quiet steps from reading to lasting comprehension.</p>
+            </div>
+
+            <div class="cycle-steps">
+                <div class="cycle-step">
+                    <div class="step-num">Step 01</div>
+                    <h3>Read & Resolve</h3>
+                    <p>Read in Preview. Press <span class="key-badge">⌥D</span> to lookup words, <span class="key-badge">Space</span> for audio, <span class="key-badge">⏎</span> to save.</p>
+                </div>
+
+                <div class="cycle-step">
+                    <div class="step-num">Step 02</div>
+                    <h3>Highlight</h3>
+                    <p>Highlight meaningful sentences that trigger insight as you read.</p>
+                </div>
+
+                <div class="cycle-step">
+                    <div class="step-num">Step 03</div>
+                    <h3>Extract (⌥N)</h3>
+                    <p>Press <span class="key-badge">⌥N</span> to auto-save and synthesize clean Markdown with session vocabulary.</p>
+                </div>
+
+                <div class="cycle-step">
+                    <div class="step-num">Step 04</div>
+                    <h3>Reflect</h3>
+                    <p>Open Markdown notes and expand on your highlighted thoughts in your own words.</p>
+                </div>
+
+                <div class="cycle-step">
+                    <div class="step-num">Step 05</div>
+                    <h3>Review</h3>
+                    <p>Open your dedicated vocabulary store anytime for independent memory reinforcement.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Shortcuts -->
+        <section id="shortcuts" class="shortcuts-section">
+            <h3>Shortcuts</h3>
+            <div class="table-row">
+                <div><span class="key-badge">⌥D</span> (Option + D)</div>
+                <div class="table-desc">Global word lookup & sentence context</div>
+            </div>
+            <div class="table-row">
+                <div><span class="key-badge">Space</span></div>
+                <div class="table-desc">Play native neural pronunciation</div>
+            </div>
+            <div class="table-row">
+                <div><span class="key-badge">⏎</span> (Enter)</div>
+                <div class="table-desc">Save word into vocabulary store & close card</div>
+            </div>
+            <div class="table-row">
+                <div><span class="key-badge">⌥N</span> (Option + N)</div>
+                <div class="table-desc">Auto-save Preview & extract notes + vocabulary</div>
+            </div>
+            <div class="table-row">
+                <div><span class="key-badge">Esc</span></div>
+                <div class="table-desc">Dismiss floating lookup window</div>
+            </div>
+        </section>
+
+        <!-- Features -->
+        <section id="features" class="features-section">
+            <div class="section-header">
+                <h2>Essentials, zero bloat</h2>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-item">
+                    <h3>Global Instant Lookup</h3>
+                    <p>Double-click any word and press <span class="key-badge">⌥D</span> for phonetic transcriptions, definitions, and sentence context.</p>
+                </div>
+
+                <div class="feature-item">
+                    <h3>Space Audio & Enter Save</h3>
+                    <p>Tap <span class="key-badge">Space</span> for offline pronunciation, and press <span class="key-badge">⏎</span> to silently collect words.</p>
+                </div>
+
+                <div class="feature-item">
+                    <h3>9-Line Context Tokenizer</h3>
+                    <p>Captures complete multi-line sentences using physical coordinate slicing and Apple NaturalLanguage NLP.</p>
+                </div>
+
+                <div class="feature-item">
+                    <h3>Pixel-Precise PDF Notes</h3>
+                    <p>Extracts only marked highlights via quadrilateral point slicing, avoiding broken sentence fragments.</p>
+                </div>
+
+                <div class="feature-item">
+                    <h3>Dedicated Vocabulary Store</h3>
+                    <p>Access your vocabulary store via local web dashboard or Markdown, with one-click flashcard CSV export.</p>
+                </div>
+
+                <div class="feature-item">
+                    <h3>Pure Native & 100% Private</h3>
+                    <p>Operates entirely on-device with zero telemetry, no subscriptions, and an ultra-light ~40MB memory footprint.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ -->
+        <section id="faq" class="faq-section">
+            <div class="section-header">
+                <h2>Frequently Asked Questions</h2>
+            </div>
+            <div class="faq-grid">
+                <div class="faq-item">
+                    <h4>Why word definitions instead of full-sentence translation?</h4>
+                    <p>Language acquisition occurs when the brain actively processes sentence structures. Machine translating entire paragraphs creates passive reading habits. VocabFloat removes vocabulary roadblocks while preserving active immersion.</p>
+                </div>
+                <div class="faq-item">
+                    <h4>How do I review collected vocabulary?</h4>
+                    <p>In addition to per-document notes, VocabFloat maintains a unified vocabulary store. Open the web dashboard, view the Markdown file, or export CSV files for flashcard review.</p>
+                </div>
+                <div class="faq-item">
+                    <h4>Is VocabFloat free and open-source?</h4>
+                    <p>Yes. 100% free and open-sourced under the MIT License. No paywalls, ads, or analytics.</p>
+                </div>
+                <div class="faq-item">
+                    <h4>Where are notes stored?</h4>
+                    <p>By default, notes are stored in <code>~/Downloads/VocabFloat_Notes/</code>. You can customize the save directory directly from the menubar.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>Crafted by <a href="https://github.com/TheColaBro" target="_blank">TheColaBro</a> · MIT License</p>
+        </div>
+    </footer>
+
+</body>
+</html>
